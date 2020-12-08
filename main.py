@@ -1,31 +1,19 @@
 import os
 import datetime
+from dateutil import tz
 import pypresence
 import getpass
-import tkinter
-import tkinter.ttk as ttkinter
+import tkinter.messagebox as msgbox
+from tkinter import *
+from tkinter.ttk import *
+from ttkthemes import ThemedTk
 from configparser import ConfigParser
-
-start_time = datetime.datetime.now().timestamp()
+import psutil
 
 conf = ConfigParser()
 conf.read("settings.ini")
 
 client_id = "785146044056076328" # Discord Application Client ID. Replace with your own, if you dont use the official build.
-
-presence = pypresence.Presence(client_id)
-presence.connect()
-
-tk = tkinter.Tk("EVE Online - Discord Presence")
-tk.title("EVE Online - Discord Presence")
-try:
-    tk.iconbitmap("icon.ico")
-except:
-    pass
-tk.geometry("350x100")
-
-frame = tkinter.Frame()
-run_loop = False
 
 settings = ["autostart_presence", "selected_char", "show_location"]
 for x in settings:
@@ -41,17 +29,13 @@ for x in settings:
 
         break
 
-show_location = tkinter.BooleanVar(frame, value=conf.getboolean("GENERAL", "show_location"))
-autostart_presence = tkinter.BooleanVar(frame, value=conf.getboolean("GENERAL", "autostart_presence"))
-selected_char = tkinter.StringVar(frame, value=conf.get("GENERAL", "selected_char"))
-
 def get_characters():
     """
     returns a list of all characters
     """
     chars = []
-    user = getpass.getuser()
-    logs = [x for x in os.scandir(f"C:\\Users\\{user}\\Documents\\EVE\\logs\\Gamelogs")] # Making it a list instead of a custom iterator
+    logs = [x for x in os.scandir(log_location)] # Making it a list instead of a custom iterator
+
     for log in logs:
         with open(log.path, "r") as f:
             try:
@@ -62,12 +46,11 @@ def get_characters():
     chars = list(dict.fromkeys(chars))
     return chars
 
-def log_lines():
+def log_lines(char=None):
     """
     returns list of lines in latest log
     """
-    user = getpass.getuser()
-    logs = [x for x in os.scandir(f"C:\\Users\\{user}\\Documents\\EVE\\logs\\Gamelogs")] # Making it a list instead of a custom iterator
+    logs = [x for x in os.scandir(log_location)] # Making it a list instead of a custom iterator # Making it a list instead of a custom iterator
     with open(logs[-1].path, "r") as f: #open latest log
         lines = [x.replace("\n", "") for x in f.readlines()] # Lines without new line char
     return lines
@@ -80,7 +63,8 @@ def details(lines=None):
         lines = log_lines()
 
     char = lines[2].split("Listener: ")[1]
-    details = {"char": char, "location": "Unknown", "autopilot": False, "docked": True}
+    start_time = int(datetime.datetime.strptime(lines[3].split("Session Started: ")[1], "%Y.%m.%d %H:%M:%S").astimezone(tz.tzlocal()).timestamp())
+    details = {"char": char, "start_time": start_time, "location": "Unknown", "autopilot": False, "docked": True}
 
     for line in lines:
         if "Undocking from" in line:
@@ -129,13 +113,16 @@ def loop():
             else:
                 d["docked"] = "In Space of "
 
-        presence.update(state=d["docked"]+d["location"], details=d['char'], large_image="eve-logo", large_text="EVE Online", small_image=small_img, small_text=small_txt, start=int(start_time))
+        presence.update(state=d["docked"]+d["location"], details=d['char'], large_image="eve-logo", large_text="EVE Online", small_image=small_img, small_text=small_txt, start=int(d["start_time"]))
     else:
         presence.clear()
     tk.after(5000, loop)
 
 def change_loop():
     global run_loop, loop_button
+    if "eve_crashmon.exe" not in (p.name() for p in psutil.process_iter()):
+        return msgbox.showwarning("EVE Online is not running", "To use this program, you need to have EVE Online started.")
+
     if run_loop == False:
         run_loop = True
         loop_button["text"] = "Stop Presence"
@@ -154,27 +141,50 @@ def set_conf():
     with open('settings.ini', 'w') as config:
         conf.write(config)
 
-loop_button = ttkinter.Button(frame, text="Start Presence", command=change_loop)
-loop_button.pack()
+tk = ThemedTk("EVE Online - Discord Presence", theme="arc")
+tk.title("EVE Online - Discord Presence")
+try:
+    tk.iconbitmap("icon.ico")
+except:
+    pass
+tk.geometry("350x100")
 
-location_box = ttkinter.Checkbutton(frame, text="Show Location", variable=show_location, onvalue=True, offvalue=False, command=set_conf)
-location_box.pack()
+frame = Frame(tk)
+
+run_loop = False
+user = getpass.getuser()
+log_location = f"C:\\Users\\{user}\\Documents\\EVE\\logs\\Gamelogs"
+show_location = BooleanVar(frame, value=conf.getboolean("GENERAL", "show_location"))
+autostart_presence = BooleanVar(frame, value=conf.getboolean("GENERAL", "autostart_presence"))
+selected_char = StringVar(frame, value=conf.get("GENERAL", "selected_char"))
+
+loop_button = Button(frame, text="Start Presence", command=change_loop)
+loop_button.grid(column=1, row=1)
+
+location_box = Checkbutton(frame, text="Show Location", variable=show_location, onvalue=True, offvalue=False, command=set_conf)
+location_box.grid(column=0, row=0)
 
 if autostart_presence.get():
     change_loop()
-
-autostart_box = ttkinter.Checkbutton(frame, text="Autostart Presence", variable=autostart_presence, onvalue=True, offvalue=False, command=set_conf)
-autostart_box.pack()
+autostart_box = Checkbutton(frame, text="Autostart Presence", variable=autostart_presence, onvalue=True, offvalue=False, command=set_conf)
+autostart_box.grid(column=0, row=1)
 
 chars = get_characters()
 if selected_char.get() == "":
     selected_char.set(chars[0])
     set_conf()
 
-character_dropdown = ttkinter.OptionMenu(frame, selected_char, selected_char.get(), *chars, command=set_conf)
-character_dropdown.pack()
+character_dropdown = OptionMenu(frame, selected_char, selected_char.get(), *chars, command=set_conf)
+character_dropdown.grid(column=1, row=0)
 
 frame.place(relx=0.5, rely=0.5, anchor="c")
+
+try:
+    presence = pypresence.Presence(client_id)
+    presence.connect()
+except pypresence.exceptions.InvalidPipe:
+    msgbox.showerror("An Error occoured", "Discord doesnt seem to run. Please start Discord and restart EVE Online - Discord Presence")
+    exit()
 
 tk.after(0, loop)
 tk.mainloop()
