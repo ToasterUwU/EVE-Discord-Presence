@@ -1,10 +1,15 @@
 import os
-import time
+import datetime
 import pypresence
 import getpass
 import tkinter
 import tkinter.ttk as ttkinter
-import threading
+from configparser import ConfigParser
+
+start_time = datetime.datetime.now().timestamp()
+
+conf = ConfigParser()
+conf.read("settings.ini")
 
 client_id = "785146044056076328" # Discord Application Client ID. Replace with your own, if you dont use the official build.
 
@@ -20,16 +25,48 @@ except:
 tk.geometry("350x100")
 
 frame = tkinter.Frame()
+run_loop = False
 
-run_th = False
-show_location = tkinter.BooleanVar(frame, value=True)
+settings = ["autostart_presence", "selected_char", "show_location"]
+for x in settings:
+    if not conf.has_option("GENERAL", x):
+        conf["GENERAL"] = {
+            "autostart_presence": False,
+            "show_location": True,
+            "selected_char": "",
+        }
+
+        with open('settings.ini', 'w') as config:
+            conf.write(config)
+
+        break
+
+show_location = tkinter.BooleanVar(frame, value=conf.getboolean("GENERAL", "show_location"))
+autostart_presence = tkinter.BooleanVar(frame, value=conf.getboolean("GENERAL", "autostart_presence"))
+selected_char = tkinter.StringVar(frame, value=conf.get("GENERAL", "selected_char"))
+
+def get_characters():
+    """
+    returns a list of all characters
+    """
+    chars = []
+    user = getpass.getuser()
+    logs = [x for x in os.scandir(f"C:\\Users\\{user}\\Documents\\EVE\\logs\\Gamelogs")] # Making it a list instead of a custom iterator
+    for log in logs:
+        with open(log.path, "r") as f:
+            try:
+                lines = [x.replace("\n", "") for x in f.readlines()]
+                chars.append(lines[2].split("Listener: ")[1])
+            except:
+                pass
+    chars = list(dict.fromkeys(chars))
+    return chars
 
 def log_lines():
     """
     returns list of lines in latest log
     """
     user = getpass.getuser()
-
     logs = [x for x in os.scandir(f"C:\\Users\\{user}\\Documents\\EVE\\logs\\Gamelogs")] # Making it a list instead of a custom iterator
     with open(logs[-1].path, "r") as f: #open latest log
         lines = [x.replace("\n", "") for x in f.readlines()] # Lines without new line char
@@ -63,9 +100,9 @@ def details(lines=None):
             details["docked"] = True
     return details
 
-def loop_thread():
-    global run_th
-    while run_th:
+def loop():
+    global run_loop
+    if run_loop:
         d = details()
 
         if d["autopilot"] == False:
@@ -92,27 +129,52 @@ def loop_thread():
             else:
                 d["docked"] = "In Space of "
 
-        presence.update(state=d["docked"]+d["location"], details=d['char'], large_image="eve-logo", large_text="EVE Online", small_image=small_img, small_text=small_txt)
-        time.sleep(5)
-
-def change_th():
-    global th, run_th, th_button
-    if run_th == False:
-        th = threading.Thread(target=loop_thread, daemon=True)
-        run_th = True
-        th.start()
-        th_button["text"] = "Stop Presence"
+        presence.update(state=d["docked"]+d["location"], details=d['char'], large_image="eve-logo", large_text="EVE Online", small_image=small_img, small_text=small_txt, start=int(start_time))
     else:
-        run_th = False
-        th_button["text"] = "Start Presence"
+        presence.clear()
+    tk.after(5000, loop)
+
+def change_loop():
+    global run_loop, loop_button
+    if run_loop == False:
+        run_loop = True
+        loop_button["text"] = "Stop Presence"
+    else:
+        run_loop = False
+        loop_button["text"] = "Start Presence"
         presence.clear()
 
-th_button = ttkinter.Button(frame, text="Start Presence", command=change_th)
-th_button.pack()
+def set_conf():
+    conf["GENERAL"] = {
+        "show_location": show_location.get(),
+        "autostart_presence": autostart_presence.get(),
+        "selected_char": selected_char.get(),
+    }
 
-location_box = ttkinter.Checkbutton(frame, text="Show Location", variable=show_location, onvalue=True, offvalue=False)
+    with open('settings.ini', 'w') as config:
+        conf.write(config)
+
+loop_button = ttkinter.Button(frame, text="Start Presence", command=change_loop)
+loop_button.pack()
+
+location_box = ttkinter.Checkbutton(frame, text="Show Location", variable=show_location, onvalue=True, offvalue=False, command=set_conf)
 location_box.pack()
+
+if autostart_presence.get():
+    change_loop()
+
+autostart_box = ttkinter.Checkbutton(frame, text="Autostart Presence", variable=autostart_presence, onvalue=True, offvalue=False, command=set_conf)
+autostart_box.pack()
+
+chars = get_characters()
+if selected_char.get() == "":
+    selected_char.set(chars[0])
+    set_conf()
+
+character_dropdown = ttkinter.OptionMenu(frame, selected_char, selected_char.get(), *chars, command=set_conf)
+character_dropdown.pack()
 
 frame.place(relx=0.5, rely=0.5, anchor="c")
 
+tk.after(0, loop)
 tk.mainloop()

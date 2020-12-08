@@ -4,6 +4,12 @@
 
 A application that enables Rich Presence for EVE Online.
 
+### Screenshots
+
+![Program](screenshots/app.png?raw=true)
+
+![Presence](screenshots/presence1.png?raw=true)
+
 ## Usage
 
 1. Download the Setup of newest release: [Click me](https://github.com/ToasterUwU/EVE-Discord-Presence/releases/latest)
@@ -14,7 +20,9 @@ A application that enables Rich Presence for EVE Online.
 
 ## To Do
 
-- Save Settings
-- Setting for autostarting the Presence
-- Option to select specific character (currently uses the one that was last logged in)
-- Better UI (No Clue how by now)
+- [ ] Save Settings
+- [ ] Setting to change small autopilot picture to other things
+- [ ] Setting for autostarting the Presence
+- [ ] Option to select specific character (currently uses the one that was last logged in)
+- [ ] Better UI
+- [ ] Maybe alternatives for the big picture
