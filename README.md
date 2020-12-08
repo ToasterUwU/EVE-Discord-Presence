@@ -29,7 +29,7 @@ The really best Discord Rich Presence for EVE Online.
 - [x] ~~Save Settings~~
 - [ ] Setting to change small autopilot picture to other things
 - [x] ~~Setting for autostarting the Presence~~
-- [ ] Option to select specific character (almost done)
+- [x] ~~Option to select specific character (almost done)~~
 - [x] ~~Better UI~~
 - [ ] Maybe alternatives for the big picture
 - [ ] Support for other languages ( Searching for native speakers to help with translations )
