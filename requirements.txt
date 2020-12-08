@@ -1,2 +1,4 @@
 pypresence
 psutil
+python-dateutil
+ttkthemes

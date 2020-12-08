@@ -46,14 +46,22 @@ def get_characters():
     chars = list(dict.fromkeys(chars))
     return chars
 
-def log_lines(char=None):
+def log_lines():
     """
     returns list of lines in latest log
     """
     logs = [x for x in os.scandir(log_location)] # Making it a list instead of a custom iterator # Making it a list instead of a custom iterator
-    with open(logs[-1].path, "r") as f: #open latest log
-        lines = [x.replace("\n", "") for x in f.readlines()] # Lines without new line char
-    return lines
+    logs.reverse()
+    char = selected_char.get()
+
+    for log in logs:
+        with open(log.path, "r") as f: #open latest log
+            lines = [x.replace("\n", "") for x in f.readlines()] # Lines without new line char
+            try:
+                if lines[2].split("Listener: ")[1] == char:
+                    return lines
+            except IndexError:
+                pass
 
 def details(lines=None):
     """
@@ -120,10 +128,9 @@ def loop():
 
 def change_loop():
     global run_loop, loop_button
-    if "eve_crashmon.exe" not in (p.name() for p in psutil.process_iter()):
-        return msgbox.showwarning("EVE Online is not running", "To use this program, you need to have EVE Online started.")
-
     if run_loop == False:
+        if "eve_crashmon.exe" not in (p.name() for p in psutil.process_iter()):
+            return msgbox.showwarning("EVE Online is not running", "To use this program, you need to have EVE Online started.")
         run_loop = True
         loop_button["text"] = "Stop Presence"
     else:
@@ -131,7 +138,7 @@ def change_loop():
         loop_button["text"] = "Start Presence"
         presence.clear()
 
-def set_conf():
+def set_conf(*args):
     conf["GENERAL"] = {
         "show_location": show_location.get(),
         "autostart_presence": autostart_presence.get(),
