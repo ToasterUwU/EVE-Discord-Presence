@@ -1,6 +1,6 @@
 import os
+import time
 import datetime
-from dateutil import tz
 import pypresence
 import getpass
 import tkinter.messagebox as msgbox
@@ -71,7 +71,7 @@ def details(lines=None):
         lines = log_lines()
 
     char = lines[2].split("Listener: ")[1]
-    start_time = int(datetime.datetime.strptime(lines[3].split("Session Started: ")[1], "%Y.%m.%d %H:%M:%S").astimezone(tz.tzlocal()).timestamp())
+    start_time = int((datetime.datetime.strptime(lines[3].split("Session Started: ")[1], "%Y.%m.%d %H:%M:%S") + datetime.timedelta(hours=(-time.timezone/3600))).timestamp())
     details = {"char": char, "start_time": start_time, "location": "Unknown", "autopilot": False, "docked": True}
 
     for line in lines:
