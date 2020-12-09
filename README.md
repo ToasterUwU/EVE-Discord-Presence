@@ -37,6 +37,6 @@ The really best Discord Rich Presence for EVE Online.
 
 ## Contact and Support me
 
-If you want to talk to me, you can join the [Discord](https://discord.gg/QuqaCuF)
+If you want to talk to me, you can join the [Discord](https://discord.gg/BFBY5qxu8d)
 
 If you want to support me, you can "Star" this project and tell your friends about it. Seeing that people like what i do makes me really happy.
