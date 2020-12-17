@@ -15,6 +15,7 @@ The really best Discord Rich Presence for EVE Online.
 ![Program](screenshots/app.png?raw=true)
 
 ![Presence](screenshots/presence1.png?raw=true)
+![Presence](screenshots/presence2.png?raw=true)
 
 ## Usage
 
