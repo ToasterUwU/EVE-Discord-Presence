@@ -9,6 +9,7 @@ from tkinter.ttk import *
 from ttkthemes import ThemedTk
 from configparser import ConfigParser
 import psutil
+import webbrowser
 
 conf = ConfigParser()
 conf.read("settings.ini")
@@ -50,7 +51,7 @@ def log_lines():
     """
     returns list of lines in latest log
     """
-    logs = [x for x in os.scandir(log_location)] # Making it a list instead of a custom iterator # Making it a list instead of a custom iterator
+    logs = [x for x in os.scandir(log_location)] # Making it a list instead of a custom iterator
     logs.reverse()
     char = selected_char.get()
 
@@ -71,8 +72,8 @@ def details(lines=None):
         lines = log_lines()
 
     char = lines[2].split("Listener: ")[1]
-    start_time = int((datetime.datetime.strptime(lines[3].split("Session Started: ")[1], "%Y.%m.%d %H:%M:%S") + datetime.timedelta(hours=(-time.timezone/3600))).timestamp())
-    details = {"char": char, "start_time": start_time, "location": "Unknown", "autopilot": False, "docked": True}
+    start_time = int((datetime.datetime.strptime(lines[3].split("Session Started: ")[1], "%Y.%m.%d %H:%M:%S") + datetime.timedelta(hours=(-time.timezone/3600))).timestamp()) #get time in own timezone from log file (i know, super complicated)
+    details = {"char": char, "start_time": start_time, "location": "Unknown", "autopilot": False, "docked": True, "station": False} #set default values
 
     for line in lines:
         if "Undocking from" in line:
@@ -88,6 +89,9 @@ def details(lines=None):
         elif "Autopilot disabled" in line:
             details["autopilot"] = False
 
+        elif "Requested to dock at" in line:
+            details["station"] = line.split("Requested to dock at ")[1].replace(" station", "")
+
         elif "Your docking request has been accepted." in line:
             details["docked"] = True
     return details
@@ -97,6 +101,7 @@ def loop():
     if run_loop:
         d = details()
 
+        # here comes the logic part
         if d["autopilot"] == False:
             if d["docked"]:
                 small_img = "docked"
@@ -118,17 +123,25 @@ def loop():
         else:
             if d["docked"]:
                 d["docked"] = "Docked in "
+                if d["station"]:
+                    d["location"] = d["station"]
+
             else:
                 d["docked"] = "In Space of "
 
-        presence.update(state=d["docked"]+d["location"], details=d['char'], large_image="eve-logo", large_text="EVE Online", small_image=small_img, small_text=small_txt, start=int(d["start_time"]))
-    else:
-        presence.clear()
-    tk.after(5000, loop)
+        presence.update(state=d["docked"]+d["location"], details=d['char'], large_image="eve-logo", large_text="EVE Discord Presence --> Get it on Github: bit.ly/2JZQHkK", small_image=small_img, small_text=small_txt, start=int(d["start_time"]))
+        status_message.config(text=f"{d['char']}\n{d['docked']+d['location']}\n{small_txt}")
+    tk.after(5000, loop) #repeat after 5 seconds
 
 def change_loop():
     global run_loop, loop_button
     if run_loop == False:
+        try:
+            presence.connect()
+        except pypresence.exceptions.InvalidPipe:
+            msgbox.showerror("An Error occoured", "Discord doesnt seem to run. Please start Discord and then try again.")
+            exit()
+
         if "eve_crashmon.exe" not in (p.name() for p in psutil.process_iter()):
             return msgbox.showwarning("EVE Online is not running", "To use this program, you need to have EVE Online started.")
         run_loop = True
@@ -137,6 +150,8 @@ def change_loop():
         run_loop = False
         loop_button["text"] = "Start Presence"
         presence.clear()
+        presence.close()
+        status_message.config(text="Presence offline")
 
 def set_conf(*args):
     conf["GENERAL"] = {
@@ -148,13 +163,15 @@ def set_conf(*args):
     with open('settings.ini', 'w') as config:
         conf.write(config)
 
+presence = pypresence.Presence(client_id)
+
 tk = ThemedTk("EVE Online - Discord Presence", theme="arc")
 tk.title("EVE Online - Discord Presence")
 try:
     tk.iconbitmap("icon.ico")
 except:
     pass
-tk.geometry("350x100")
+tk.geometry("350x150")
 
 frame = Frame(tk)
 
@@ -184,14 +201,13 @@ if selected_char.get() == "":
 character_dropdown = OptionMenu(frame, selected_char, selected_char.get(), *chars, command=set_conf)
 character_dropdown.grid(column=1, row=0)
 
-frame.place(relx=0.5, rely=0.5, anchor="c")
+status_message = Message(frame, width=300)
+status_message.grid(column=0, columnspan=2, row=2)
 
-try:
-    presence = pypresence.Presence(client_id)
-    presence.connect()
-except pypresence.exceptions.InvalidPipe:
-    msgbox.showerror("An Error occoured", "Discord doesnt seem to run. Please start Discord and restart EVE Online - Discord Presence")
-    exit()
+credit_button = Button(frame, text="Github Page", command=lambda: webbrowser.open("https://github.com/ToasterUwU/EVE-Discord-Presence"))
+credit_button.grid(column=0, columnspan=2, row=3)
+
+frame.place(relx=0.5, rely=0.5, anchor="c")
 
 tk.after(0, loop)
 tk.mainloop()
