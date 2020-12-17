@@ -122,7 +122,7 @@ def loop():
                 d["docked"] = "In Space"
         else:
             if d["docked"]:
-                d["docked"] = "Docked in "
+                d["docked"] = "Docked at "
                 if d["station"]:
                     d["location"] = d["station"]
 
