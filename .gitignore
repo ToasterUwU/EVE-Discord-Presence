@@ -2,7 +2,5 @@
 /build
 /dist
 /main.spec
-/main.iss
-/.vscode
 /test*.py
 /settings.ini

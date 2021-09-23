@@ -1,0 +1,51 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Pyinstaller: Compile Script",
+      "type": "process",
+      "command": "pyinstaller",
+      "args": [
+        "${workspaceFolder}\\main.py",
+        "-i=${workspaceFolder}\\icon.ico",
+        "--noconfirm",
+        "--windowed"
+      ],
+      "presentation": {
+        "reveal": "always",
+        "echo": false
+      }
+    },
+    {
+      "label": "Inno Setup: Compile Script",
+      "type": "process",
+      "command": "ISCC.exe",
+      "args": [
+        "${workspaceFolder}\\main.iss"
+      ],
+      "presentation": {
+        "reveal": "always",
+        "echo": false
+      },
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "dependsOn": "Pyinstaller: Compile Script",
+    },
+    {
+      "label": "Installer: Run",
+      "type": "process",
+      "command": "${workspaceFolder}\\dist\\EVE-Discord-Presence-Setup.exe",
+      "presentation": {
+        "reveal": "always",
+        "echo": false
+      },
+      "group": {
+        "kind": "test",
+        "isDefault": true
+      },
+      "dependsOn": "Inno Setup: Compile Script",
+    }
+  ]
+}
