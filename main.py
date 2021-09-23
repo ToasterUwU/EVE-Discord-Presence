@@ -106,12 +106,15 @@ def details(lines=None):
 
         elif "Jumping from" in line:
             details["location"] = line.split(" to ")[1]
+            details["docked"] = False
 
         elif "Autopilot engaged" in line:
             details["autopilot"] = True
+            details["docked"] = False
 
         elif "Autopilot disabled" in line:
             details["autopilot"] = False
+            details["docked"] = False
 
         elif "Requested to dock at" in line:
             details["station"] = line.split("Requested to dock at ")[1].replace(
@@ -120,6 +123,7 @@ def details(lines=None):
 
         elif "Your docking request has been accepted." in line:
             details["docked"] = True
+
     return details
 
 
