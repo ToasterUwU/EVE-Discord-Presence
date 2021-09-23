@@ -95,7 +95,7 @@ def details(lines=None):
         "start_time": start_time,
         "location": "Unknown",
         "autopilot": False,
-        "docked": True,
+        "docked": False,
         "station": False,
     }  # set default values
 
@@ -110,11 +110,9 @@ def details(lines=None):
 
         elif "Autopilot engaged" in line:
             details["autopilot"] = True
-            details["docked"] = False
 
         elif "Autopilot disabled" in line:
             details["autopilot"] = False
-            details["docked"] = False
 
         elif "Requested to dock at" in line:
             details["station"] = line.split("Requested to dock at ")[1].replace(
@@ -132,33 +130,48 @@ def loop():
     if run_loop:
         d = details()
 
-        # here comes the logic part
-        if d["autopilot"] == False:
-            if d["docked"]:
-                small_img = "docked"
-                small_txt = "Docked"
-            else:
+        unknown_location = False
+        if not d["docked"] and d["location"] == "Unknown":
+            d["docked"] = ""
+            d["location"] = "Location Unknown"
+
+            if d["autopilot"] == False:
                 small_img = "manual"
                 small_txt = "Manual flight"
-        else:
-            small_img = "auto"
-            small_txt = "Autopilot"
-
-        if not show_location.get():
-            d["location"] = ""
-
-            if d["docked"]:
-                d["docked"] = "Docked"
             else:
-                d["docked"] = "In Space"
-        else:
-            if d["docked"]:
-                d["docked"] = "Docked at "
-                if d["station"]:
-                    d["location"] = d["station"]
+                small_img = "auto"
+                small_txt = "Autopilot"
 
+            unknown_location = True
+
+        # here comes the logic part
+        if not unknown_location:
+            if d["autopilot"] == False:
+                if d["docked"]:
+                    small_img = "docked"
+                    small_txt = "Docked"
+                else:
+                    small_img = "manual"
+                    small_txt = "Manual flight"
             else:
-                d["docked"] = "In Space of "
+                small_img = "auto"
+                small_txt = "Autopilot"
+
+            if not show_location.get():
+                d["location"] = ""
+
+                if d["docked"]:
+                    d["docked"] = "Docked"
+                else:
+                    d["docked"] = "In Space"
+            else:
+                if d["docked"]:
+                    d["docked"] = "Docked at "
+                    if d["station"]:
+                        d["location"] = d["station"]
+
+                else:
+                    d["docked"] = "In Space of "
 
         presence.update(
             state=d["docked"] + d["location"],
