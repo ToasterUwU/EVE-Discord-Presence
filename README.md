@@ -1,3 +1,7 @@
+# IMPORTANT
+
+I dont play Eve anymore, so i have no way of keeping this updated. If someone wants to fork it and keep it alive, go ahead.
+
 <img height="30px" width="30px" src="icon.ico"> [![pypresence](https://img.shields.io/badge/using-pypresence-00bb88.svg?style=for-the-badge&logo=discord&logoWidth=20)](https://github.com/qwertyquerty/pypresence)
 # EVE-Discord-Presence
 
